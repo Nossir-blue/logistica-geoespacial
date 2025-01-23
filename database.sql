@@ -1,77 +1,62 @@
-CREATE DATABASE LogisticaEspacial;
-USE LogisticaEspacial;
+-- Criar a base de dados
+CREATE DATABASE IF NOT EXISTS logistica;
 
--- Tabela de Armazéns
-CREATE TABLE Armazens (
+-- Selecionar a base de dados
+USE logistica;
+
+-- Criar tabela de Armazéns
+CREATE TABLE IF NOT EXISTS armazens (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
+    nome VARCHAR(255) NOT NULL,
     localizacao POINT NOT NULL,
-    SPATIAL INDEX (localizacao)
+    CONSTRAINT chk_localizacao CHECK (ST_IsValid(localizacao))
 );
 
--- Tabela de Pontos de Entrega
-CREATE TABLE PontosEntrega (
+-- Criar tabela de Pontos de Entrega
+CREATE TABLE IF NOT EXISTS pontos_entrega (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    descricao VARCHAR(255),
+    nome VARCHAR(255) NOT NULL,
     localizacao POINT NOT NULL,
-    SPATIAL INDEX (localizacao)
+    CONSTRAINT chk_localizacao CHECK (ST_IsValid(localizacao))
 );
 
--- Tabela de Rotas dos Veículos
-CREATE TABLE RotasVeiculos (
+-- Criar tabela de Rotas de Veículos
+CREATE TABLE IF NOT EXISTS rotas_veiculos (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    descricao VARCHAR(255),
+    nome_veiculo VARCHAR(255) NOT NULL,
     rota LINESTRING NOT NULL,
-    SPATIAL INDEX (rota)
+    CONSTRAINT chk_rota CHECK (ST_IsValid(rota))
 );
--- Inserir Armazéns
-INSERT INTO Armazens (nome, localizacao) 
+
+-- Inserir alguns dados de exemplo para Armazéns
+INSERT INTO armazens (nome, localizacao)
 VALUES 
-    ('Armazém 1', ST_GeomFromText('POINT(13.2343 -8.839)')),
-    ('Armazém 2', ST_GeomFromText('POINT(13.2654 -8.845)')),
-    ('Armazém 3', ST_GeomFromText('POINT(13.312 -8.895)'));
+('Armazém 1', ST_GeomFromText('POINT(13.2302 -8.8113)')), -- Exemplo em Luanda
+('Armazém 2', ST_GeomFromText('POINT(13.2350 -8.8100)'));
 
--- Inserir Pontos de Entrega
-INSERT INTO PontosEntrega (descricao, localizacao) 
-VALUES 
-    ('Entrega 1', ST_GeomFromText('POINT(13.2444 -8.837)')),
-    ('Entrega 2', ST_GeomFromText('POINT(13.267 -8.860)')),
-    ('Entrega 3', ST_GeomFromText('POINT(13.320 -8.890)'));
+-- Inserir alguns dados de exemplo para Pontos de Entrega
+INSERT INTO pontos_entrega (nome, localizacao)
+VALUES
+('Entrega 1', ST_GeomFromText('POINT(13.2400 -8.8050)')),
+('Entrega 2', ST_GeomFromText('POINT(13.2450 -8.8025)'));
 
--- Inserir Rotas dos Veículos
-INSERT INTO RotasVeiculos (descricao, rota) 
-VALUES 
-    ('Rota 1', ST_GeomFromText('LINESTRING(13.2343 -8.839, 13.2654 -8.845, 13.312 -8.895)')),
-    ('Rota 2', ST_GeomFromText('LINESTRING(13.2444 -8.837, 13.267 -8.860, 13.320 -8.890)'));
--- Consultar armazens mais próximos
-SET @pontoReferencia = ST_GeomFromText('POINT(13.250 -8.850)');
-
+-- Inserir dados de exemplo para Rotas de Veículos
+INSERT INTO rotas_veiculos (nome_veiculo, rota)
+VALUES
+('Veículo 1', ST_GeomFromText('LINESTRING(13.2302 -8.8113, 13.2350 -8.8100)')),
+('Veículo 2', ST_GeomFromText('LINESTRING(13.2400 -8.8050, 13.2450 -8.8025)'));
+-- Encontrar armazéns dentro de um raio de 10 km de um ponto fornecido (por exemplo, 13.2300 -8.8100)
+SELECT id, nome, ST_AsText(localizacao) AS localizacao, 
+    ST_Distance(localizacao, ST_GeomFromText('POINT(13.2300 -8.8100)')) AS distancia
+FROM armazens
+WHERE ST_Distance(localizacao, ST_GeomFromText('POINT(13.2300 -8.8100)')) <= 10000; -- 10 km
+-- Calcular a distância entre dois armazéns (exemplo entre id = 1 e id = 2)
 SELECT 
-    nome, 
-    ST_Distance_Sphere(localizacao, @pontoReferencia) AS distancia
-FROM 
-    Armazens
-WHERE 
-    ST_Distance_Sphere(localizacao, @pontoReferencia) <= 10000
-ORDER BY distancia;
-
--- Calcular distância entre dois pontos
-SELECT 
-    ST_Distance_Sphere(
-        (SELECT localizacao FROM PontosEntrega WHERE id = 1),
-        (SELECT localizacao FROM PontosEntrega WHERE id = 2)
-    ) AS distancia;
--- Visualizar dados no mapa
-SELECT 
-    id, 
-    nome, 
-    ST_AsGeoJSON(localizacao) AS geojson 
-FROM 
-    Armazens;
--- Visualizar rotas no mapa
-SELECT 
-    id, 
-    descricao, 
-    ST_AsGeoJSON(rota) AS geojson 
-FROM 
-    RotasVeiculos;
+    a1.nome AS armazem1, 
+    a2.nome AS armazem2, 
+    ST_Distance(a1.localizacao, a2.localizacao) AS distancia
+FROM armazens a1, armazens a2
+WHERE a1.id = 1 AND a2.id = 2;
+-- Exibir as rotas de veículos
+SELECT nome_veiculo, ST_AsText(rota) AS rota
+FROM rotas_veiculos;
