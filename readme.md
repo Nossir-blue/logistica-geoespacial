@@ -2,6 +2,11 @@
 
 Este projeto é um sistema simples de gestão de localizações geográficas para empresas de logística, utilizando MySQL para armazenamento de dados e Leaflet para visualização em mapas.
 
+<p align="center">
+    <img src="https://readme-typing-svg.demolab.com/?lines=[Paguem+o+Nossir,+por+favor+💀]" />
+  
+</p>
+
 ## Funcionalidades
 - Inserção de localizações de armazéns e rotas.
 - Cálculo da distância entre dois pontos.
